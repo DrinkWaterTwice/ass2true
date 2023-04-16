@@ -1,11 +1,16 @@
 package cn.edu.sustech.cs209.chatting.client;
 
 import cn.edu.sustech.cs209.chatting.common.Message;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -20,8 +25,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Controller implements Initializable {
 
+    public TextArea inputArea;
     @FXML
     ListView<Message> chatContentList;
+
 
     String username;
 
@@ -76,14 +83,13 @@ public class Controller implements Initializable {
     }
 
     /**
-     * A new dialog should contain a multi-select list, showing all user's name.
-     * You can select several users that will be joined in the group chat, including yourself.
+     * A new dialog should contain a multi-select list, showing all user's name. You can select
+     * several users that will be joined in the group chat, including yourself.
      * <p>
-     * The naming rule for group chats is similar to WeChat:
-     * If there are > 3 users: display the first three usernames, sorted in lexicographic order, then use ellipsis with the number of users, for example:
-     * UserA, UserB, UserC... (10)
-     * If there are <= 3 users: do not display the ellipsis, for example:
-     * UserA, UserB (2)
+     * The naming rule for group chats is similar to WeChat: If there are > 3 users: display the
+     * first three usernames, sorted in lexicographic order, then use ellipsis with the number of
+     * users, for example: UserA, UserB, UserC... (10) If there are <= 3 users: do not display the
+     * ellipsis, for example: UserA, UserB (2)
      */
     @FXML
     public void createGroupChat() {
@@ -92,19 +98,34 @@ public class Controller implements Initializable {
     /**
      * Sends the message to the <b>currently selected</b> chat.
      * <p>
-     * Blank messages are not allowed.
-     * After sending the message, you should clear the text input field.
+     * Blank messages are not allowed. After sending the message, you should clear the text input
+     * field.
      */
     @FXML
     public void doSendMessage() {
         // TODO
+
+
+        try {
+            Socket s = new Socket("localhost", 1234);
+            OutputStream outputStream = s.getOutputStream();
+
+            byte[] a = inputArea.getText().getBytes();
+            inputArea.clear();
+            outputStream.write(a);
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
-     * You may change the cell factory if you changed the design of {@code Message} model.
-     * Hint: you may also define a cell factory for the chats displayed in the left panel, or simply override the toString method.
+     * You may change the cell factory if you changed the design of {@code Message} model. Hint: you
+     * may also define a cell factory for the chats displayed in the left panel, or simply override
+     * the toString method.
      */
     private class MessageCellFactory implements Callback<ListView<Message>, ListCell<Message>> {
+
         @Override
         public ListCell<Message> call(ListView<Message> param) {
             return new ListCell<Message>() {
