@@ -1,5 +1,6 @@
 package cn.edu.sustech.cs209.chatting.server;
 
+import cn.edu.sustech.cs209.chatting.common.Message;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -21,9 +22,9 @@ public class Main {
                 System.out.println("success");
                 byte[] buf = new byte[1024];
                 int readLen = 0;
-                while ((readLen = inputStream.read(buf)) != -1) {
-                    System.out.println(new String(buf, 0, readLen));
-                }
+                readLen = inputStream.read(buf);
+                Message me = Message.getMessage(new String(buf, 0, readLen));
+                System.out.println(me.getData());
                 inputStream.close();
                 socket.close();
             }

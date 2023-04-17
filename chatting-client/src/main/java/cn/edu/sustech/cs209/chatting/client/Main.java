@@ -24,6 +24,7 @@ public class Main extends Application {
                 outputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
+                break;
             }
         }
 

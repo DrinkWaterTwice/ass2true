@@ -1,10 +1,21 @@
 package cn.edu.sustech.cs209.chatting.client;
 
 import cn.edu.sustech.cs209.chatting.common.Message;
+
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableArray;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -23,17 +34,46 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReference;
 
+
 public class Controller implements Initializable {
 
     public TextArea inputArea;
     @FXML
     ListView<Message> chatContentList;
 
+    @FXML
+    ListView<String> chatList;
 
+    //聊天列表
+    ArrayList<String> chatWith = new ArrayList<>();
+
+    //消息记录
+    List<Message> messagelist = new ArrayList<>();
+
+    HashMap<String, List<Message>> allMessage = new HashMap<>();
     String username;
+
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        chatWith.add("罗启航");
+        chatWith.add("启航罗");
+        allMessage.put("罗启航", new ArrayList<>());
+        allMessage.put("启航罗", new ArrayList<>());
+        ObservableList<String> strings = FXCollections.observableList(chatWith);
+        chatList.setItems(strings);
+
+        chatList.getSelectionModel().selectedItemProperty().addListener(
+            (observableValue, selectionMode, t1) -> {
+                System.out.println(t1);
+                chatContentList.getItems().clear();
+                ObservableList<Message> changeTo = FXCollections.observableList(allMessage.get(t1));
+                chatContentList.setItems(changeTo);
+
+
+            }
+        );
 
         Dialog<String> dialog = new TextInputDialog();
         dialog.setTitle("Login");
@@ -105,19 +145,29 @@ public class Controller implements Initializable {
     public void doSendMessage() {
         // TODO
 
-
         try {
             Socket s = new Socket("localhost", 1234);
             OutputStream outputStream = s.getOutputStream();
-
             byte[] a = inputArea.getText().getBytes();
+            String sendTo = chatList.getSelectionModel().getSelectedItem();
+            Message messageSent = new Message(0, System.currentTimeMillis(), username, sendTo,
+                inputArea.getText());
+            allMessage.get(sendTo).add(messageSent);
+            ObservableList<Message> observable = FXCollections.observableList(allMessage.get(sendTo));
+            chatContentList.setItems(observable);
             inputArea.clear();
-            outputStream.write(a);
+
+            outputStream.write(messageSent.getJson().getBytes());
             outputStream.close();
         } catch (IOException e) {
+
             e.printStackTrace();
         }
     }
+
+    /**
+     * 接收信息
+     */
 
     /**
      * You may change the cell factory if you changed the design of {@code Message} model. Hint: you
