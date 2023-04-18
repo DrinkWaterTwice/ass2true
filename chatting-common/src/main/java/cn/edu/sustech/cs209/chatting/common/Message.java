@@ -14,6 +14,8 @@ public class Message {
 
     private String data;
 
+    private int port = -1;
+
     public Message(int type, Long timestamp, String sentBy, String sendTo, String data) {
         this.type = type;
         this.timestamp = timestamp;
@@ -30,19 +32,22 @@ public class Message {
             (String) json.get("sentBy"),
             (String) json.get("sendTo"),
             (String) json.get("data")
-
         );
+        if((int)json.get("port") != -1){
+            me.port = (int) json.get("port");
+        }
         return me;
     }
 
-    public String getJson() {
+    public String
+    getJson() {
         JSONObject object = new JSONObject();
-
         object.put("type", type);
         object.put("timestamp", timestamp);
         object.put("sentBy", sentBy);
-        object.put("sendTO", sendTo);
+        object.put("sendTo", sendTo);
         object.put("data", data);
+        object.put("port", port);
         return object.toJSONString();
     }
 
@@ -58,8 +63,32 @@ public class Message {
         return sendTo;
     }
 
+    @Override
+    public String toString() {
+        return "Message{" +
+            "type=" + type +
+            ", timestamp=" + timestamp +
+            ", sentBy='" + sentBy + '\'' +
+            ", sendTo='" + sendTo + '\'' +
+            ", data='" + data + '\'' +
+            ", port=" + port +
+            '}';
+    }
+
     public String getData() {
         return data;
+    }
+
+    public int getType(){
+        return type;
+    }
+
+    public void setPort(int port){
+        this.port = port;
+    }
+
+    public int getPort(){
+        return port;
     }
 
 

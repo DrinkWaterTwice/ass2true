@@ -12,8 +12,14 @@
     <artifactId>chatting-client</artifactId>
 
     <properties>
-        <javafx.version>19.0.2.1</javafx.version>
 
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- 解决编译时中文乱码-->
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+
+
+        <javafx.version>19.0.2.1</javafx.version>
         <main-class.name>cn.edu.sustech.cs209.chatting.client.Main</main-class.name>
     </properties>
 

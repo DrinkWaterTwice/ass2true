@@ -2,26 +2,24 @@ package cn.edu.sustech.cs209.chatting.client;
 
 import cn.edu.sustech.cs209.chatting.common.Message;
 
-import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableArray;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
@@ -48,30 +46,26 @@ public class Controller implements Initializable {
     ArrayList<String> chatWith = new ArrayList<>();
 
     //消息记录
-    List<Message> messagelist = new ArrayList<>();
+    String[] online;
 
     HashMap<String, List<Message>> allMessage = new HashMap<>();
     String username;
+
+    ServerSocket ser;
+
+
+    int port;
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-        chatWith.add("罗启航");
-        chatWith.add("启航罗");
-        allMessage.put("罗启航", new ArrayList<>());
-        allMessage.put("启航罗", new ArrayList<>());
-        ObservableList<String> strings = FXCollections.observableList(chatWith);
-        chatList.setItems(strings);
-
+        //给两天列表添加监听器
         chatList.getSelectionModel().selectedItemProperty().addListener(
             (observableValue, selectionMode, t1) -> {
-                System.out.println(t1);
                 chatContentList.getItems().clear();
-                ObservableList<Message> changeTo = FXCollections.observableList(allMessage.get(t1));
-                chatContentList.setItems(changeTo);
-
-
+                allMessage.get(t1).stream().sorted(Comparator.comparingLong(Message::getTimestamp))
+                    .forEach(t -> chatContentList.getItems().add(t));
             }
         );
 
@@ -82,6 +76,7 @@ public class Controller implements Initializable {
 
         Optional<String> input = dialog.showAndWait();
         if (input.isPresent() && !input.get().isEmpty()) {
+
             /*
                TODO: Check if there is a user with the same name among the currently logged-in users,
                      if so, ask the user to change the username
@@ -92,31 +87,31 @@ public class Controller implements Initializable {
             Platform.exit();
         }
 
+        Random random = new Random();
+        int port = random.nextInt(1000) + 1000;
+        this.port = port;
+        try {
+            System.out.println("发送信息");
+            Message loginMe = new Message(1, System.currentTimeMillis(), username, "service",
+                "服务器数据");
+            loginMe.setPort(port);
+            sendMess(loginMe);
+            //acceptRun();
+        } catch (Exception e) {
+            //还得加弹窗
+            System.out.println("连接失败");
+        }
+
         chatContentList.setCellFactory(new MessageCellFactory());
     }
 
     @FXML
     public void createPrivateChat() {
-        AtomicReference<String> user = new AtomicReference<>();
+        sentOnlineRe();
 
-        Stage stage = new Stage();
-        ComboBox<String> userSel = new ComboBox<>();
 
-        // FIXME: get the user list from server, the current user's name should be filtered out
-        userSel.getItems().addAll("Item 1", "Item 2", "Item 3");
 
-        Button okBtn = new Button("OK");
-        okBtn.setOnAction(e -> {
-            user.set(userSel.getSelectionModel().getSelectedItem());
-            stage.close();
-        });
 
-        HBox box = new HBox(10);
-        box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(20, 20, 20, 20));
-        box.getChildren().addAll(userSel, okBtn);
-        stage.setScene(new Scene(box));
-        stage.showAndWait();
 
         // TODO: if the current user already chatted with the selected user, just open the chat with that user
         // TODO: otherwise, create a new chat item in the left panel, the title should be the selected user's name
@@ -144,30 +139,94 @@ public class Controller implements Initializable {
     @FXML
     public void doSendMessage() {
         // TODO
+        String sendTo = chatList.getSelectionModel().getSelectedItem();
+        System.out.println(sendTo);
+        Message messageSent = new Message(0, System.currentTimeMillis(), username, sendTo,
+            inputArea.getText());
+        System.out.println(messageSent);
+        if (!sendMess(messageSent)) {
+            System.out.println("mistakecode 2");
+            return;
+        }
 
+        allMessage.get(sendTo).add(messageSent);
+        System.out.println(chatContentList.getItems().size());
+        chatContentList.getItems().clear();
+        allMessage.get(messageSent.getSendTo()).stream().sorted(
+                Comparator.comparingLong(Message::getTimestamp))
+            .forEach(t -> chatContentList.getItems().add(t));
+        inputArea.clear();
+        updateView();
+    }
+
+    public boolean sendMess(Message me) {
         try {
             Socket s = new Socket("localhost", 1234);
             OutputStream outputStream = s.getOutputStream();
-            byte[] a = inputArea.getText().getBytes();
-            String sendTo = chatList.getSelectionModel().getSelectedItem();
-            Message messageSent = new Message(0, System.currentTimeMillis(), username, sendTo,
-                inputArea.getText());
-            allMessage.get(sendTo).add(messageSent);
-            ObservableList<Message> observable = FXCollections.observableList(allMessage.get(sendTo));
-            chatContentList.setItems(observable);
-            inputArea.clear();
-
-            outputStream.write(messageSent.getJson().getBytes());
+            outputStream.write(me.getJson().getBytes(StandardCharsets.UTF_8));
             outputStream.close();
-        } catch (IOException e) {
-
-            e.printStackTrace();
+        } catch (Exception e) {
+            return false;
         }
+        return true;
     }
 
-    /**
-     * 接收信息
-     */
+    public void getOnlineAccept(Message me){
+        online = me.getData().split("/-/-/");
+
+        Platform.runLater(() -> {
+            AtomicReference<String> user = new AtomicReference<>();
+            Stage stage = new Stage();
+            ComboBox<String> userSel = new ComboBox<>();
+            userSel.getItems().addAll(online);
+
+            Button okBtn = new Button("OK");
+            okBtn.setOnAction(e -> {
+                user.set(userSel.getSelectionModel().getSelectedItem());
+                if (chatWith.contains(user.get())){
+                    chatList.getSelectionModel().select(user.get());
+                    stage.close();
+                    return;
+                }
+                addNewChat(userSel.getSelectionModel().getSelectedItem());
+                stage.close();
+
+            });
+            HBox box = new HBox(10);
+            box.setAlignment(Pos.CENTER);
+            box.setPadding(new Insets(20, 20, 20, 20));
+            box.getChildren().addAll(userSel, okBtn);
+            stage.setScene(new Scene(box));
+            stage.showAndWait();
+        });
+
+    }
+
+    public void addNewChat(String userSel){
+        //聊天列表里添加聊天对象
+        chatWith.add(userSel);
+        //添加聊天信息
+        allMessage.put(userSel,new ArrayList<>());
+        //放到显示列表里
+        chatList.getItems().add(userSel);
+
+        chatList.getSelectionModel().select(userSel);
+
+    }
+
+    public void sentOnlineRe(){
+        Message mes = new Message(2,System.currentTimeMillis(), username, "service","在线请求");
+        mes.setPort(port);
+        sendMess(mes);
+    }
+
+
+
+
+    public void updateView() {
+        chatContentList.refresh();
+    }
+
 
     /**
      * You may change the cell factory if you changed the design of {@code Message} model. Hint: you
@@ -184,6 +243,8 @@ public class Controller implements Initializable {
                 public void updateItem(Message msg, boolean empty) {
                     super.updateItem(msg, empty);
                     if (empty || Objects.isNull(msg)) {
+                        setText(null);
+                        setGraphic(null);
                         return;
                     }
 

@@ -3,6 +3,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- 解决编译时中文乱码-->
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+
+    </properties>
+
     <parent>
         <groupId>cn.edu.sustech.cs209.chatting</groupId>
         <artifactId>chatting</artifactId>
