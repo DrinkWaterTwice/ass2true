@@ -3,16 +3,20 @@ package cn.edu.sustech.cs209.chatting.common;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 
+
+/**
+ * type 0是私聊 1是服务器信息 2是信息请求 3是看看在不在线 4是群发信息 5下线通知 6是登录请求 10是退出登录
+ */
 public class Message {
 
     int type;
-    private Long timestamp;
+    private final Long timestamp;
 
-    private String sentBy;
+    private final String sentBy;
 
-    private String sendTo;
+    private final String sendTo;
 
-    private String data;
+    private final String data;
 
     private int port = -1;
 
