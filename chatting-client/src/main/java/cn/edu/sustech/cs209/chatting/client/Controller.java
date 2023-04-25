@@ -130,14 +130,14 @@ public class Controller implements Initializable {
                     }
                     Platform.runLater(() -> {
                         System.out.println("登录失败");
-                        TanChuang("登录失败", "用户已经在线");
+                        TanChuang("登录失败", "用户已经在线或密码错误");
                     });
 
                     ss.close();
                     socket.close();
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    TanChuang("登录失败","服务器脱机");
                 }
             } else if (result.isPresent() && result.get() == zc) {
                 Message me = new Message(7, System.currentTimeMillis(), textField.getText(),
