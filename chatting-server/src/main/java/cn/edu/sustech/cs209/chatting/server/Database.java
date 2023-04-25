@@ -75,7 +75,7 @@ public class Database {
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("私聊加入数据库失败");
         }
         return false;
     }
@@ -91,7 +91,7 @@ public class Database {
             Statement sta = con.createStatement();
             sta.execute(sql);
         } catch (Exception e) {
-
+            System.out.println("群组加入数据库失败");
         }
     }
 
@@ -108,7 +108,7 @@ public class Database {
                 return true;
             }
         } catch (Exception e) {
-
+            System.out.println("创建用户");
         }
         return false;
     }
@@ -125,6 +125,7 @@ public class Database {
                 return true;
             }
         } catch (Exception e) {
+            System.out.println("登录检查失败");
         }
         return false;
     }
@@ -155,14 +156,14 @@ public class Database {
                             }
                         }
                     } catch (Exception e) {
-
+                        System.out.println("读取信息失败");
                     }
                 }
             }
             messages.addAll(mid);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("读取信息失败");
         }
         messages.forEach(System.out::println);
         System.out.println("获取的数据量" + messages.size());
@@ -182,7 +183,7 @@ public class Database {
             sta.execute(sql);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("注册失败");
         }
         return false;
     }

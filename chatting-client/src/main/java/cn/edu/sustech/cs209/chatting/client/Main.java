@@ -26,11 +26,9 @@ public class Main extends Application {
 
 
     public static void main(String[] args) {
-        try {
+
             launch();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
 
         System.exit(0);
     }

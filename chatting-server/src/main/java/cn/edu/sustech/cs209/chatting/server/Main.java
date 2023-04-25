@@ -84,7 +84,7 @@ public class Main {
                 inputStream.close();
                 socket.close();
             } catch (IOException e) {
-
+                System.out.println("服务器错误");
             }
         }
     }
@@ -106,6 +106,7 @@ public class Main {
             outputStream.close();
             socket.close();
         } catch (Exception e) {
+            System.out.println("信息发送失败");
             return false;
         }
         return true;
@@ -130,7 +131,7 @@ public class Main {
                         out.close();
                         s.close();
                     } catch (Exception e) {
-
+                        System.out.println("数据库读取失败");
                     }
                 }
 
