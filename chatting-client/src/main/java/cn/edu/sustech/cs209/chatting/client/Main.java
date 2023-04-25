@@ -137,7 +137,7 @@ public class Main extends Application {
                             }
                             try {
                                 List<User> users = controller.chatList.getItems().stream()
-                                    .sorted(((o1, o2) -> {
+                                    .sorted(((o2, o1) -> {
                                         if (o1.isGroup()&&o1.group().getChatMessage().size() < 1){
                                             return 0;
                                         }
@@ -188,7 +188,7 @@ public class Main extends Application {
                                     })).collect(Collectors.toList());
                                 controller.chatList.setItems(FXCollections.observableList(users));
                             }catch (Exception e){
-                                e.printStackTrace();
+                                System.out.println("排序错误");
                             }
 
 
