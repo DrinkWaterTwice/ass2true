@@ -21,6 +21,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -30,6 +31,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Dialog;
@@ -37,10 +39,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
@@ -74,6 +78,8 @@ public class Controller implements Initializable {
 
     boolean isOnline = true;
 
+    ObservableList<String> users = FXCollections.observableArrayList();
+
 
     int port;
 
@@ -85,12 +91,78 @@ public class Controller implements Initializable {
         this.port = port;
 
         //给两天列表添加监听器
+
+        while (!canLogin) {
+            Label login = new Label("账号");
+            Label pwd = new Label("密码");
+            TextField textField = new TextField();
+            PasswordField passwordField = new PasswordField();
+            Dialog<ButtonType> dialog1 = new Dialog<>();
+            dialog1.getDialogPane().setContent(new VBox(login, textField, pwd, passwordField));
+            dialog1.getDialogPane().getButtonTypes().add(ButtonType.OK);
+            ButtonType zc = new ButtonType("注册");
+            ButtonType end = new ButtonType(("exit"));
+            dialog1.getDialogPane().getButtonTypes().add(zc);
+            dialog1.getDialogPane().getButtonTypes().add(end);
+
+
+
+            /*Dialog<String> dialog = new TextInputDialog();
+            dialog.setTitle("Login");
+            dialog.setHeaderText(null);
+            dialog.setContentText("Username:");
+            Optional<String> input = dialog.showAndWait();*/
+
+            Optional<ButtonType> result = dialog1.showAndWait();
+
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                try {
+                    ServerSocket ss = new ServerSocket(port);
+                    String mid = textField.getText();
+                    String pw = passwordField.getText();
+                    sendLoginRe(mid, pw);
+                    Socket socket = ss.accept();
+                    InputStream in = socket.getInputStream();
+                    byte[] bytes = new byte[1024];
+                    int len = in.read(bytes);
+                    Message me = Message.getMessage(
+                        new String(bytes, 0, len, StandardCharsets.UTF_8));
+                    if (me.getData().equals("true")) {
+                        canLogin = true;
+                        username = mid;
+                        System.out.println("登录成功: " + username);
+                        ss.close();
+                        socket.close();
+                        continue;
+                    }
+                    Platform.runLater(() -> {
+                        System.out.println("登录失败");
+                        TanChuang("登录失败", "用户已经在线");
+                    });
+
+                    ss.close();
+                    socket.close();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else if (result.isPresent() && result.get() == zc) {
+                Message me = new Message(7, System.currentTimeMillis(), textField.getText(),
+                    "service", passwordField.getText());
+                sendMess(me);
+            } else {
+                Platform.exit();
+                System.exit(0);
+                return;
+            }
+        }
+
         chatList.getSelectionModel().selectedItemProperty().addListener(
             (observableValue, selectionMode, t1) -> {
+                if (t1 == null) {
+                    return;
+                }
                 if (t1.isGroup()) {
-                    System.out.println("切换到群组" + t1.getName());
-                    System.out.println(t1.group().getGroupName());
-                    System.out.println("消息记录有" + t1.group().getChatMessage().size() + "条");
                     chatContentList.getItems().clear();
                     groups.get(t1.getName()).getChatMessage().stream()
                         .sorted(Comparator.comparingLong(Message::getTimestamp)).
@@ -105,61 +177,13 @@ public class Controller implements Initializable {
             }
         );
 
-        while (!canLogin) {
-            Dialog<String> dialog = new TextInputDialog();
-            dialog.setTitle("Login");
-            dialog.setHeaderText(null);
-            dialog.setContentText("Username:");
-            Optional<String> input = dialog.showAndWait();
-            System.out.println("登录失败");
-            if (input.isPresent()) {
-                if (input.get().isEmpty()) {
-                    continue;
-                }
-                try {
-                    ServerSocket ss = new ServerSocket(port);
-                    String mid = input.get();
-                    sendLoginRe(mid);
-                    Socket socket = ss.accept();
-                    InputStream in = socket.getInputStream();
-                    byte[] bytes = new byte[1024];
-                    int len = in.read(bytes);
-                    Message me = Message.getMessage(
-                        new String(bytes, 0, len, StandardCharsets.UTF_8));
-                    if (me.getData().equals("true")) {
-                        canLogin = true;
-                        username = mid;
-                        ss.close();
-                        socket.close();
-                        continue;
-                    }
-                    TanChuang("登录失败", "用户已经在线");
-                    ss.close();
-                    socket.close();
-
-                } catch (Exception e) {
-
-                }
-
-            /*
-               TODO: Check if there is a user with the same name among the currently logged-in users,
-                     if so, ask the user to change the username
-             */
-            } else {
-                Platform.exit();
-                return;
-            }
-        }
-
         try {
-            System.out.println("发送信息");
             Message loginMe = new Message(1, System.currentTimeMillis(), username, "service",
                 "服务器数据");
             loginMe.setPort(port);
             sendMess(loginMe);
         } catch (Exception e) {
-            //还得加弹窗
-            System.out.println("连接失败");
+            TanChuang("连接失败", "服务器不在线");
         }
 
         updateMessage();
@@ -227,6 +251,7 @@ public class Controller implements Initializable {
             list.forEach(t -> {
                 on.getItems().add(t);
             });
+            //on.setItems(users);
 
             stage.setScene(new Scene(on));
             MultipleSelectionModel<String> mu = on.getSelectionModel();
@@ -234,7 +259,6 @@ public class Controller implements Initializable {
             ObservableList<String> ob = mu.getSelectedItems();
             Button okBtn = new Button("OK");
             okBtn.setOnAction(e -> {
-                System.out.println(ob);
                 List<String> list1 = ob.stream().sorted().collect(Collectors.toList());
                 list1.add(username);
                 list1.sort(String::compareTo);
@@ -254,6 +278,25 @@ public class Controller implements Initializable {
 
     }
 
+    @FXML
+    public void viewOnline() {
+        Platform.runLater(() -> {
+            Stage stage = new Stage();
+            ComboBox<String> userSel = new ComboBox<>();
+            userSel.getItems().addAll(online);
+            ListView<String> on = new ListView<>();
+            on.setItems(users);
+            stage.setScene(new Scene(on));
+            Button okBtn = new Button("OK");
+            HBox box = new HBox(100);
+            box.setAlignment(Pos.CENTER);
+            box.setPadding(new Insets(20, 20, 20, 20));
+            box.getChildren().addAll(on, okBtn);
+            stage.setScene(new Scene(box));
+            stage.showAndWait();
+        });
+    }
+
     /**
      * Sends the message to the <b>currently selected</b> chat.
      * <p>
@@ -265,7 +308,12 @@ public class Controller implements Initializable {
         // TODO
         int type;
         User sendU = chatList.getSelectionModel().getSelectedItem();
-        if (sendU.getName() == null) {
+
+        if (sendU == null || sendU.getName() == null) {
+            Platform.runLater(() -> {
+                TanChuang("警告", "没有选中聊天对象，真可怜");
+            });
+
             return;
         }
         String sendTo = sendU.getName();
@@ -275,17 +323,17 @@ public class Controller implements Initializable {
             type = 4;
         }
 
-        System.out.println(sendTo);
+        if (inputArea.getText().equals("")) {
+            return;
+        }
         Message messageSent = new Message(type, System.currentTimeMillis(), username, sendTo,
             inputArea.getText());
         System.out.println(messageSent);
         if (!sendMess(messageSent)) {
-            System.out.println("mistake 2");
             return;
         }
         if (type == 0) {
             allMessage.get(sendTo).add(messageSent);
-            System.out.println(chatContentList.getItems().size());
             chatContentList.getItems().clear();
             allMessage.get(messageSent.getSendTo()).stream().sorted(
                     Comparator.comparingLong(Message::getTimestamp))
@@ -309,10 +357,12 @@ public class Controller implements Initializable {
             outputStream.close();
         } catch (Exception e) {
             if (me.getType() != 2) {
-                TanChuang("发送失败", "可能正在脱机工作");
+                Platform.runLater(() -> TanChuang("发送失败", "可能正在脱机工作"));
+
             } else if (isOnline) {
                 isOnline = false;
-                TanChuang("下线通知", "服务器炸了，快给服主捐点吧");
+                Platform.runLater(() -> TanChuang("下线通知", "服务器炸了，快给服主捐点吧"));
+
             }
             return false;
         }
@@ -325,6 +375,11 @@ public class Controller implements Initializable {
         } else {
             online = me.getData().split("/-/-/");
         }
+        Platform.runLater(() -> {
+            users.clear();
+            users.addAll(Arrays.asList(online));
+            users.add(username);
+        });
 
     }
 
@@ -334,11 +389,13 @@ public class Controller implements Initializable {
         }
         //聊天列表里添加聊天对象
         User user = new User(userSel);
+        chatWith.add(user);
+        allMessage.put(userSel, new ArrayList<>());
         Platform.runLater(() ->
         {
-            chatWith.add(user);
+
             //添加聊天信息
-            allMessage.put(userSel, new ArrayList<>());
+
             //放到显示列表里
             chatList.getItems().add(user);
             chatList.getSelectionModel().select(user);
@@ -347,9 +404,9 @@ public class Controller implements Initializable {
     }
 
     public void addNewChat(User user) {
-        System.out.println(user.isGroup());
+        chatWith.add(user);
         Platform.runLater(() -> {
-            chatWith.add(user);
+
             //放到显示列表里
             chatList.getItems().add(user);
             chatList.getSelectionModel().select(user);
@@ -371,8 +428,8 @@ public class Controller implements Initializable {
         }
     }
 
-    public void sendLoginRe(String username) {
-        Message me = new Message(6, System.currentTimeMillis(), username, "service", "登录请求");
+    public void sendLoginRe(String username, String pwd) {
+        Message me = new Message(6, System.currentTimeMillis(), username, "service", pwd);
         me.setPort(port);
         sendMess(me);
     }
@@ -382,11 +439,17 @@ public class Controller implements Initializable {
      */
     public void TanChuang(String type, String s) {
         Platform.runLater(() -> {
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle(type);
-            alert.setContentText(s);
-            alert.showAndWait();
+            try {
+                Alert alert = new Alert(AlertType.INFORMATION);
+                alert.setTitle(type);
+                alert.setContentText(s);
+                alert.showAndWait();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         });
+
     }
 
     public void updateMessage() {
@@ -394,13 +457,18 @@ public class Controller implements Initializable {
             while (true) {
                 sentOnlineRe();
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
                 Platform.runLater(() -> {
-                    onlineNumber.setText("online: " + (online.length + 1));
+
                     whoOnline.setText(username);
+                    if (!isOnline) {
+                        onlineNumber.setText("不在线");
+                    } else {
+                        onlineNumber.setText("online: " + (online.length + 1));
+                    }
                 });
             }
         }).start();

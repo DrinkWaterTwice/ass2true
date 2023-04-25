@@ -20,6 +20,8 @@ public class Main {
 
     public static HashMap<String, ArrayList<String>> userChatWithG = new HashMap<>();
 
+    public static Database database = new Database();
+
     public static void main(String[] args) throws IOException {
         ServerSocket ss = new ServerSocket(1234);
         checkOnline();
@@ -37,6 +39,8 @@ public class Main {
                 }
                 if (me.getType() == 1) {
                     userAndPort.put(me.getSentBy(), me.getPort());
+                    readMes(me);
+
                     continue;
                 }
                 if (me.getType() == 2) {
@@ -46,11 +50,24 @@ public class Main {
                 if (me.getType() == 4) {
                     buildChatG(me.getSendTo());
                     sendToGroup(me);
+                    database.addMessage(me);
+                    database.addMessageG(me);
                     continue;
                 }
                 if (me.getType() == 6) {
                     senLogin(me);
                     continue;
+                }
+                if (me.getType() == 7) {
+                    if (database.signIn(me)) {
+                        Message message = new Message(7, System.currentTimeMillis(), "service",
+                            me.getSentBy(), "true");
+                        sendTo(message, me.getPort(), "注册的人");
+                    } else {
+                        Message message = new Message(7, System.currentTimeMillis(), "service",
+                            me.getSentBy(), "false");
+                        sendTo(message, me.getPort(), "注册的人");
+                    }
                 }
                 if (me.getType() == 10) {
                     deleteChat(me.getSentBy());
@@ -62,11 +79,12 @@ public class Main {
                         buildChat(me.getSentBy(), me.getSendTo());
                         sendTo(me, userAndPort.get(me.getSendTo()));
                     }
+                    database.addMessage(me);
                 }
                 inputStream.close();
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+
             }
         }
     }
@@ -79,8 +97,8 @@ public class Main {
             return false;
         }
         if (message.getType() != 2) {
-        System.out.println("send" + message);
-         }
+            System.out.println("send" + message);
+        }
         try {
             Socket socket = new Socket("localhost", port);
             OutputStream outputStream = socket.getOutputStream();
@@ -91,7 +109,34 @@ public class Main {
             return false;
         }
         return true;
+    }
 
+    public static void readMes(Message me) {
+        String user = me.getSentBy();
+        ArrayList<Message> messages = database.getMessages(me.getSentBy());
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            messages.forEach(t -> {
+                if (t.getType() == 0 || t.getType() == 4) {
+                    //sendTo(t, userAndPort.get(user));
+                    try {
+                        Socket s = new Socket("localhost", userAndPort.get(user));
+                        OutputStream out = s.getOutputStream();
+                        out.write(t.getJson().getBytes(StandardCharsets.UTF_8));
+                        out.close();
+                        s.close();
+                    } catch (Exception e) {
+
+                    }
+                }
+
+            });
+        });
+        thread.start();
     }
 
 
@@ -218,10 +263,17 @@ public class Main {
         if (userAndPort.containsKey(user)) {
             sendTo(new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "false"),
                 me.getPort());
-        } else {
-            sendTo(new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "true"),
+        } else if (database.checkUser(me.getSentBy(), me.getData())) {
+            sendTo((new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "true")),
+                me.getPort());
+        } else if (!database.checkUser(me.getSentBy(), me.getData())){
+            sendTo(new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "密码错误"),
+                me.getPort());
+        }else {
+            sendTo((new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "false")),
                 me.getPort());
         }
+
     }
 
     static void checkOnline() {

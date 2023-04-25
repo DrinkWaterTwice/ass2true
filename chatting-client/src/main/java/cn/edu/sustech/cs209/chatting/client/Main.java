@@ -12,14 +12,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 
 
@@ -27,7 +26,11 @@ public class Main extends Application {
 
 
     public static void main(String[] args) {
-        launch();
+        try {
+            launch();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         System.exit(0);
     }
@@ -39,6 +42,7 @@ public class Main extends Application {
 
         Controller controller = fxmlLoader.getController();
         stage.setTitle(controller.username);
+
         //接受消息的线程
 
         stage.show();
@@ -49,14 +53,10 @@ public class Main extends Application {
             System.out.println("结束成功");
             Platform.exit();
         });
-        while (!controller.canLogin){
 
-        }
         Task<String> task1 = new Task<String>() {
-            Message me;
-
             @Override
-            protected String call() {
+            synchronized protected String call() {
                 try {
                     ServerSocket ss = new ServerSocket(controller.port);
                     while (true) {
@@ -64,8 +64,17 @@ public class Main extends Application {
                         InputStream in = socket.getInputStream();
                         byte[] bytes = new byte[1024];
                         int len = in.read(bytes);
-                        me = Message.getMessage(new String(bytes, 0, len, StandardCharsets.UTF_8));
+                        final Message me = Message.getMessage(
+                            new String(bytes, 0, len, StandardCharsets.UTF_8));
                         if (me.getType() == 0) {
+                            if (me.getSentBy().equals(controller.username)) {
+                                //接受缓存的消息
+                                if (!controller.allMessage.containsKey(me.getSendTo())) {
+                                    controller.addNewChat(me.getSendTo());
+                                }
+                                controller.allMessage.get(me.getSendTo()).add(me);
+                                continue;
+                            }
                             //如果聊天列表没有这个窗口，则创建一个新的窗口
                             if (!controller.allMessage.containsKey(me.getSentBy())) {
                                 controller.addNewChat(me.getSentBy());
@@ -78,6 +87,11 @@ public class Main extends Application {
                                     controller.chatContentList.getItems().clear();
                                     controller.allMessage.get(me.getSentBy())
                                         .forEach(t -> controller.chatContentList.getItems().add(t));
+                                } else {
+                                    Platform.runLater(() -> {
+                                        controller.TanChuang("收到私人消息",
+                                            "来自" + me.getSentBy());
+                                    });
                                 }
                             });
                         }
@@ -91,8 +105,7 @@ public class Main extends Application {
                                 controller.addNewChat(new User(group));
                             }
                             Platform.runLater(() -> {
-                                System.out.println("接受到群组消息");
-
+                                Logger.getLogger("接受到群组信息");
                                 controller.groups.get(group.getGroupName()).getChatMessage()
                                     .add(me);
                                 if (controller.chatList.getSelectionModel().getSelectedItem()
@@ -102,21 +115,23 @@ public class Main extends Application {
                                         forEach(t -> {
                                             controller.chatContentList.getItems().add(t);
                                         });
+                                } else {
+                                    Platform.runLater(() -> controller.TanChuang("收到群组消息",
+                                        "来自" + me.getSentBy()));
                                 }
                             });
                         }
                         if (me.getType() == 5) {
                             Platform.runLater(() -> {
-                                Alert alert = new Alert(AlertType.INFORMATION);
-                                alert.setTitle("下线通知");
-                                alert.setContentText(me.getData() + "觉得你太烦拔线了");
-                                alert.showAndWait();
+                                controller.TanChuang("下线通知", me.getData() + "觉得你太烦拔线了");
                             });
                         }
                         if (me.getType() == 6) {
                             if (me.getData().equals("false")) {
                                 controller.canLogin = false;
-                            }else {
+                            } else if (me.getData().equals("密码错误")) {
+                                controller.TanChuang("登录失败", "密码错误");
+                            } else {
                                 controller.canLogin = true;
                             }
                         }
@@ -131,8 +146,8 @@ public class Main extends Application {
                         socket.close();
                     }
                 } catch (Exception e) {
+                    System.out.println("端口占用");
                     e.printStackTrace();
-                    System.out.println("接受失败");
                 }
                 return "ok";
             }
@@ -140,4 +155,6 @@ public class Main extends Application {
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         executorService.submit(task1);
     }
+
+
 }
