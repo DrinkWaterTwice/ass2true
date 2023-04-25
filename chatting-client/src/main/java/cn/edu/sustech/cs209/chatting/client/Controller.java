@@ -65,6 +65,8 @@ public class Controller implements Initializable {
 
     boolean canLogin;
 
+    boolean readMessageFinish = false;
+
     //聊天列表
     ArrayList<User> chatWith = new ArrayList<>();
 
@@ -431,7 +433,7 @@ public class Controller implements Initializable {
                 alert.setContentText(s);
                 alert.showAndWait();
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("弹窗错误");
             }
 
         });

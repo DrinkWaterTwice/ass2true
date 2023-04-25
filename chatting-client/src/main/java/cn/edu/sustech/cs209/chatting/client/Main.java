@@ -12,10 +12,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -26,10 +26,7 @@ public class Main extends Application {
 
 
     public static void main(String[] args) {
-
-            launch();
-
-
+        launch();
         System.exit(0);
     }
 
@@ -85,7 +82,7 @@ public class Main extends Application {
                                     controller.chatContentList.getItems().clear();
                                     controller.allMessage.get(me.getSentBy())
                                         .forEach(t -> controller.chatContentList.getItems().add(t));
-                                } else {
+                                } else if (controller.readMessageFinish) {
                                     Platform.runLater(() -> controller.TanChuang("收到私人消息",
                                         "来自" + me.getSentBy()));
                                 }
@@ -101,7 +98,6 @@ public class Main extends Application {
                                 controller.addNewChat(new User(group));
                             }
                             Platform.runLater(() -> {
-                                Logger.getLogger("接受到群组信息");
                                 controller.groups.get(group.getGroupName()).getChatMessage()
                                     .add(me);
                                 if (controller.chatList.getSelectionModel().getSelectedItem()
@@ -109,14 +105,15 @@ public class Main extends Application {
                                     controller.chatContentList.getItems().clear();
                                     controller.groups.get(group.getGroupName()).getChatMessage().
                                         forEach(t -> controller.chatContentList.getItems().add(t));
-                                } else {
+                                } else if (controller.readMessageFinish) {
                                     Platform.runLater(() -> controller.TanChuang("收到群组消息",
                                         "来自" + me.getSentBy()));
                                 }
                             });
                         }
                         if (me.getType() == 5) {
-                            Platform.runLater(() -> controller.TanChuang("下线通知", me.getData() + "觉得你太烦拔线了"));
+                            Platform.runLater(() -> controller.TanChuang("下线通知",
+                                me.getData() + "觉得你太烦拔线了"));
                         }
                         if (me.getType() == 6) {
                             if (me.getData().equals("false")) {
@@ -131,6 +128,71 @@ public class Main extends Application {
                         if (me.getType() == 2) {
                             controller.getOnlineAccept(me);
                         }
+                        if (me.getType() == 9) {
+                            controller.readMessageFinish = true;
+                        }
+                        Platform.runLater(() -> {
+                            if (controller.chatList == null) {
+                                return;
+                            }
+                            try {
+                                List<User> users = controller.chatList.getItems().stream()
+                                    .sorted(((o1, o2) -> {
+                                        if (o1.isGroup()&&o1.group().getChatMessage().size() < 1){
+                                            return 0;
+                                        }
+                                        if (o2.isGroup()&&o2.group().getChatMessage().size() < 1){
+                                            return 0;
+                                        }
+                                        if (o1.isGroup() && o2.isGroup()) {
+                                            return Long.compare(o1.group().getChatMessage()
+                                                    .get(o1.group().getChatMessage().size() - 1)
+                                                    .getTimestamp(),
+                                                o2.group().getChatMessage()
+                                                    .get(o2.group().getChatMessage().size() - 1)
+                                                    .getTimestamp());
+                                        }
+                                        if (o1.isGroup() && !o2.isGroup()) {
+                                            return Long.compare(o1.group().getChatMessage()
+                                                    .get(o1.group().getChatMessage().size() - 1)
+                                                    .getTimestamp(),
+                                                controller.allMessage.get(o2.getName())
+                                                    .get(controller.allMessage.get(o2.getName())
+                                                        .size()
+                                                        - 1)
+                                                    .getTimestamp());
+                                        }
+                                        if (!o1.isGroup() && o2.isGroup()) {
+                                            return Long.compare(
+                                                controller.allMessage.get(o1.getName())
+                                                    .get(controller.allMessage.get(o1.getName())
+                                                        .size() - 1)
+                                                    .getTimestamp(), o2.group().getChatMessage()
+                                                    .get(o2.group().getChatMessage().size() - 1)
+                                                    .getTimestamp()
+                                            );
+                                        }
+                                        if (!o1.isGroup() && !o2.isGroup()) {
+                                            return Long.compare(
+                                                controller.allMessage.get(o1.getName())
+                                                    .get(controller.allMessage.get(o1.getName())
+                                                        .size() - 1)
+                                                    .getTimestamp(),
+                                                controller.allMessage.get(o2.getName())
+                                                    .get(controller.allMessage.get(o2.getName())
+                                                        .size()
+                                                        - 1)
+                                                    .getTimestamp());
+                                        }
+                                        return 0;
+                                    })).collect(Collectors.toList());
+                                controller.chatList.setItems(FXCollections.observableList(users));
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }
+
+
+                        });
 
                         in.close();
                         socket.close();

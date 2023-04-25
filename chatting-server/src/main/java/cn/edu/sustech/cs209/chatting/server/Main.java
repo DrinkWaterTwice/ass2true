@@ -133,8 +133,10 @@ public class Main {
                         System.out.println("数据库读取失败");
                     }
                 }
-
             });
+            Message mes = new Message(9, System.currentTimeMillis(), "service", me.getSentBy(),
+                "读取完成");
+            sendTo(mes, userAndPort.get(user), "读取完成");
         });
         thread.start();
     }
