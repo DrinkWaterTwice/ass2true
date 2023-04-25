@@ -30,7 +30,7 @@ public class Main {
                 Socket socket = ss.accept();
                 InputStream inputStream = socket.getInputStream();
                 byte[] buf = new byte[1024];
-                int readLen = 0;
+                int readLen;
                 readLen = inputStream.read(buf);
                 Message me = Message.getMessage(
                     new String(buf, 0, readLen, StandardCharsets.UTF_8));
@@ -89,12 +89,12 @@ public class Main {
         }
     }
 
-    static boolean sendTo(Message message, int port) {
+    static void sendTo(Message message, int port) {
         if (!userAndPort.containsKey(message.getSendTo()) && message.getType() != 6) {
-            return false;
+            return;
         }
         if (message.getData().isEmpty() && message.getType() != 2) {
-            return false;
+            return;
         }
         if (message.getType() != 2) {
             System.out.println("send" + message);
@@ -107,9 +107,8 @@ public class Main {
             socket.close();
         } catch (Exception e) {
             System.out.println("信息发送失败");
-            return false;
         }
-        return true;
+
     }
 
     public static void readMes(Message me) {
@@ -141,18 +140,12 @@ public class Main {
     }
 
 
-    /**
-     * 群发消息使用
-     *
-     * @param message
-     * @param port
-     * @param sendTo
-     * @return
-     */
-    static boolean sendTo(Message message, int port, String sendTo) {
+
+    static void sendTo(Message message, int port, String sendTo) {
         if (message.getData().isEmpty()) {
-            return false;
+            return;
         }
+        System.out.println(sendTo);
         try {
             Socket socket = new Socket("localhost", port);
             OutputStream outputStream = socket.getOutputStream();
@@ -160,16 +153,15 @@ public class Main {
             outputStream.close();
             socket.close();
         } catch (Exception e) {
-            return false;
+            System.out.println("发送信息失败" + message);
         }
-        return true;
     }
 
     static void sendToGroup(Message me) {
         String[] strings = me.getSendTo().split("/-/-/");
         for (String e : strings) {
             if (userAndPort.containsKey(e)) {
-                System.out.println("发送群组信息" + me.toString());
+                System.out.println("发送群组信息" + me);
                 Message meToAll = new Message(4, me.getTimestamp(), me.getSentBy(), me.getSendTo(),
                     me.getData());
                 sendTo(meToAll, userAndPort.get(e), e);
@@ -278,16 +270,14 @@ public class Main {
     }
 
     static void checkOnline() {
-        new Thread(() -> {
-            userAndPort.forEach((k, v) -> {
-                Message me = new Message(3, System.currentTimeMillis(), "service", k, null);
-                try {
-                    sendTo(me, v);
-                } catch (Exception e) {
-                    deleteChat(k);
-                }
-            });
-        }).start();
+        new Thread(() -> userAndPort.forEach((k, v) -> {
+            Message me = new Message(3, System.currentTimeMillis(), "service", k, null);
+            try {
+                sendTo(me, v);
+            } catch (Exception e) {
+                deleteChat(k);
+            }
+        })).start();
     }
 
 }

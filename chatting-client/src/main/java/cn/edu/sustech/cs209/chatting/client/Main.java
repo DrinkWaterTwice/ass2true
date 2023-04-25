@@ -86,10 +86,8 @@ public class Main extends Application {
                                     controller.allMessage.get(me.getSentBy())
                                         .forEach(t -> controller.chatContentList.getItems().add(t));
                                 } else {
-                                    Platform.runLater(() -> {
-                                        controller.TanChuang("收到私人消息",
-                                            "来自" + me.getSentBy());
-                                    });
+                                    Platform.runLater(() -> controller.TanChuang("收到私人消息",
+                                        "来自" + me.getSentBy()));
                                 }
                             });
                         }
@@ -110,9 +108,7 @@ public class Main extends Application {
                                     .getName().equals(group.getGroupName())) {
                                     controller.chatContentList.getItems().clear();
                                     controller.groups.get(group.getGroupName()).getChatMessage().
-                                        forEach(t -> {
-                                            controller.chatContentList.getItems().add(t);
-                                        });
+                                        forEach(t -> controller.chatContentList.getItems().add(t));
                                 } else {
                                     Platform.runLater(() -> controller.TanChuang("收到群组消息",
                                         "来自" + me.getSentBy()));
@@ -120,9 +116,7 @@ public class Main extends Application {
                             });
                         }
                         if (me.getType() == 5) {
-                            Platform.runLater(() -> {
-                                controller.TanChuang("下线通知", me.getData() + "觉得你太烦拔线了");
-                            });
+                            Platform.runLater(() -> controller.TanChuang("下线通知", me.getData() + "觉得你太烦拔线了"));
                         }
                         if (me.getType() == 6) {
                             if (me.getData().equals("false")) {
@@ -137,9 +131,7 @@ public class Main extends Application {
                         if (me.getType() == 2) {
                             controller.getOnlineAccept(me);
                         }
-                        if (me.getType() == 3) {
 
-                        }
                         in.close();
                         socket.close();
                     }

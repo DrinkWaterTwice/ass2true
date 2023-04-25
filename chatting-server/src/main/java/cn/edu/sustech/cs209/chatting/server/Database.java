@@ -36,14 +36,14 @@ public class Database {
         getConnection();
     }
 
-    private boolean getConnection() {
+    private void getConnection() {
         try {
             Class.forName("org.postgresql.Driver");
 
         } catch (Exception e) {
             System.err.println("Cannot find the PostgreSQL driver. Check CLASSPATH.");
             System.exit(1);
-            return false;
+            return;
         }
         try {
             if (con == null) {
@@ -53,12 +53,11 @@ public class Database {
             System.err.println("Database connection failed,in courier");
             System.err.println(e.getMessage());
             System.exit(1);
-            return false;
+
         }
-        return true;
     }
 
-    public boolean addMessage(Message message) {
+    public void addMessage(Message message) {
         String me = message.getJson();
         String sql =
             "insert into mess (userName, getTime, messages) values " + "('" + message.getSentBy()
@@ -73,11 +72,10 @@ public class Database {
             if (message.getType() == 0) {
                 sta.execute(sql1);
             }
-            return true;
         } catch (Exception e) {
             System.out.println("私聊加入数据库失败");
         }
-        return false;
+
     }
 
     public void addMessageG(Message message) {
@@ -95,23 +93,6 @@ public class Database {
         }
     }
 
-
-    public boolean creatUser(String user, String pass) {
-        String sql = "select * from users where userName = '" + user + "'";
-        try {
-            Statement sta = con.createStatement();
-            ResultSet re = sta.executeQuery(sql);
-            if (!re.next()) {
-                String s =
-                    "insert into users (userName, pass) values ('" + user + "','" + pass + "')";
-                sta.executeUpdate(s);
-                return true;
-            }
-        } catch (Exception e) {
-            System.out.println("创建用户");
-        }
-        return false;
-    }
 
     public boolean checkUser(String user, String pwd) {
         String sql = "select * from users where userName = '" + user + "'";

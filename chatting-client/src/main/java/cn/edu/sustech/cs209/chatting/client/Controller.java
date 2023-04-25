@@ -106,13 +106,6 @@ public class Controller implements Initializable {
             dialog1.getDialogPane().getButtonTypes().add(end);
 
 
-
-            /*Dialog<String> dialog = new TextInputDialog();
-            dialog.setTitle("Login");
-            dialog.setHeaderText(null);
-            dialog.setContentText("Username:");
-            Optional<String> input = dialog.showAndWait();*/
-
             Optional<ButtonType> result = dialog1.showAndWait();
 
             if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -187,9 +180,7 @@ public class Controller implements Initializable {
         }
 
         updateMessage();
-        inputArea.onKeyPressedProperty().addListener(e -> {
-            doSendMessage();
-        });
+        inputArea.onKeyPressedProperty().addListener(e -> doSendMessage());
         chatContentList.setCellFactory(new MessageCellFactory());
     }
 
@@ -248,10 +239,7 @@ public class Controller implements Initializable {
             userSel.getItems().addAll(online);
             List<String> list = Arrays.stream(online).collect(Collectors.toList());
             ListView<String> on = new ListView<>();
-            list.forEach(t -> {
-                on.getItems().add(t);
-            });
-            //on.setItems(users);
+            list.forEach(t -> on.getItems().add(t));
 
             stage.setScene(new Scene(on));
             MultipleSelectionModel<String> mu = on.getSelectionModel();
@@ -310,9 +298,7 @@ public class Controller implements Initializable {
         User sendU = chatList.getSelectionModel().getSelectedItem();
 
         if (sendU == null || sendU.getName() == null) {
-            Platform.runLater(() -> {
-                TanChuang("警告", "没有选中聊天对象，真可怜");
-            });
+            Platform.runLater(() -> TanChuang("警告", "没有选中聊天对象，真可怜"));
 
             return;
         }
@@ -424,7 +410,7 @@ public class Controller implements Initializable {
             mes.setPort(port);
             sendMess(mes);
         } catch (Exception e) {
-
+            System.out.println("请求失败");
         }
     }
 
