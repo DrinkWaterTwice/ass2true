@@ -9,50 +9,45 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity"
-  prefHeight="471.0" prefWidth="722.0" xmlns="http://javafx.com/javafx/8.0.321"
-  xmlns:fx="http://javafx.com/fxml/1"
-  fx:controller="cn.edu.sustech.cs209.chatting.client.Controller">
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="624.0" prefWidth="907.0" xmlns="http://javafx.com/javafx/8.0.321" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cn.edu.sustech.cs209.chatting.client.Controller">
 
 
   <children>
-    <VBox layoutY="23.0" prefHeight="381.0" prefWidth="99.0">
-      <children>
-        <ListView fx:id="chatList" prefHeight="378.0" prefWidth="99.0"/>
-      </children>
+    <VBox layoutX="6.0" layoutY="24.0" prefHeight="454.0" prefWidth="130.0">
+         <children>
+        <ListView fx:id="chatList" prefHeight="446.0" prefWidth="130.0" />
+         </children>
     </VBox>
-    <Pane layoutX="99.0" layoutY="367.0" prefHeight="99.0" prefWidth="622.0">
+    <Pane layoutX="136.0" layoutY="477.0" prefHeight="99.0" prefWidth="773.0">
       <children>
-        <TextArea fx:id="inputArea" layoutY="30.0" prefHeight="72.0" prefWidth="517.0"/>
-        <Button layoutX="533.0" layoutY="60.0" mnemonicParsing="false" onAction="#doSendMessage"
-          prefHeight="1.0" prefWidth="75.0" text="send"/>
-        <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="65.0" text="emo"/>
+        <TextArea fx:id="inputArea" layoutX="7.0" layoutY="3.0" prefHeight="69.0" prefWidth="757.0" />
       </children>
     </Pane>
-    <ListView fx:id="chatContentList" layoutX="99.0" layoutY="23.0" prefHeight="339.0"
-      prefWidth="622.0"/>
+    <ListView fx:id="chatContentList" layoutX="143.0" layoutY="24.0" prefHeight="446.0" prefWidth="764.0" />
     <MenuBar layoutY="-2.0" prefHeight="26.0" prefWidth="722.0">
       <menus>
         <Menu mnemonicParsing="false" text="chat">
           <items>
-            <MenuItem mnemonicParsing="false" onAction="#createPrivateChat"
-              text="New Private Chat"/>
-            <MenuItem mnemonicParsing="false" onAction="#createGroupChat" text="New Group Chat"/>
+            <MenuItem mnemonicParsing="false" onAction="#createPrivateChat" text="New Private Chat" />
+            <MenuItem mnemonicParsing="false" onAction="#createGroupChat" text="New Group Chat" />
           </items>
         </Menu>
-        <Menu mnemonicParsing="false" text="online" >
+        <Menu mnemonicParsing="false" text="online">
           <items>
-            <MenuItem mnemonicParsing="false" text="online" onAction="#viewOnline"/>
+            <MenuItem mnemonicParsing="false" onAction="#viewOnline" text="online" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Help">
           <items>
-            <MenuItem mnemonicParsing="false" text="About"/>
+            <MenuItem mnemonicParsing="false" text="About" />
           </items>
         </Menu>
       </menus>
     </MenuBar>
-    <Label fx:id="onlineNumber" layoutX="34.0" layoutY="414.0" text="Label"/>
-    <Label fx:id="whoOnline" layoutX="34.0" layoutY="442.0" text="Label"/>
+    <Label fx:id="onlineNumber" layoutX="34.0" layoutY="552.0" text="Label" />
+    <Label fx:id="whoOnline" layoutX="34.0" layoutY="520.0" text="Label" />
+  <Button layoutX="824.0" layoutY="585.0" mnemonicParsing="false" onAction="#doSendMessage" prefHeight="1.0" prefWidth="75.0" text="send" />
+  <Button layoutX="748.0" layoutY="585.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="65.0" text="emo" />
   </children>
 </Pane>

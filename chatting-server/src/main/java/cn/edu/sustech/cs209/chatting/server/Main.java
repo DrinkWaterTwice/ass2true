@@ -140,7 +140,6 @@ public class Main {
     }
 
 
-
     static void sendTo(Message message, int port, String sendTo) {
         if (message.getData().isEmpty()) {
             return;
@@ -259,10 +258,11 @@ public class Main {
         } else if (database.checkUser(me.getSentBy(), me.getData())) {
             sendTo((new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "true")),
                 me.getPort());
-        } else if (!database.checkUser(me.getSentBy(), me.getData())){
-            sendTo(new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "密码错误"),
+        } else if (!database.checkUser(me.getSentBy(), me.getData())) {
+            sendTo(
+                new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "密码错误"),
                 me.getPort());
-        }else {
+        } else {
             sendTo((new Message(6, System.currentTimeMillis(), "service", me.getSentBy(), "false")),
                 me.getPort());
         }
